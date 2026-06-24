@@ -61,3 +61,59 @@ Once the initial setup is complete:
 Use the default administrator account to sign in locally:
 *   **Email:** `admin@example.com`
 *   **Password:** `medplum_admin`
+
+---
+
+## 6. Medplum CLI Reference
+
+The Medplum CLI ([packages/cli](file:///Users/soepaing/projects/medplum/packages/cli)) is a command-line tool used to authenticate with Medplum servers, perform REST operations, switch environment profiles, and deploy serverless Bots.
+
+### Initial Build & Activation
+Since the CLI depends on `@medplum/hl7` (which is not part of the standard dev server build), you must build it and its dependencies using Turborepo before first use:
+```bash
+npx turbo run build --filter=@medplum/cli
+```
+
+### Execution Commands
+You can run the CLI locally in two ways:
+
+1. **From the repository root:**
+   ```bash
+   npx tsx packages/cli/src/index.ts <command>
+   ```
+2. **From the CLI workspace directory:**
+   ```bash
+   cd packages/cli
+   npm run medplum -- <command>
+   ```
+
+### Common CLI Operations
+
+* **Logging In (Localhost):**
+  ```bash
+  npx tsx packages/cli/src/index.ts login --base-url http://localhost:8103
+  ```
+  *(Sign in with local admin details: `admin@example.com` / `medplum_admin`)*
+
+* **Checking Login Session:**
+  ```bash
+  npx tsx packages/cli/src/index.ts whoami
+  ```
+
+* **Querying FHIR Resources:**
+  ```bash
+  npx tsx packages/cli/src/index.ts get Patient
+  ```
+
+* **Managing Environment Profiles:**
+  ```bash
+  npx tsx packages/cli/src/index.ts profile list
+  ```
+
+### CLI Storage & Behavior
+* **Profile Configuration Files:** The CLI caches session tokens, active profiles, and endpoints in JSON files located under your user home directory:
+  `~/.medplum/<profile>.json` (e.g. `~/.medplum/default.json`).
+* **localStorage Warning:** Modern Node.js versions (v22+) might output an `ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.` warning since the SDK performs browser checks. You can cleanly suppress this by prefixing commands with the `NODE_NO_WARNINGS` env variable:
+  ```bash
+  NODE_NO_WARNINGS=1 npx tsx packages/cli/src/index.ts whoami
+  ```
