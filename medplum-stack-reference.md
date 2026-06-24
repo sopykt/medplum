@@ -117,3 +117,58 @@ You can run the CLI locally in two ways:
   ```bash
   NODE_NO_WARNINGS=1 npx tsx packages/cli/src/index.ts whoami
   ```
+
+---
+
+## 7. Testing GraphQL Externally
+
+You can query the Medplum GraphQL endpoint (`http://localhost:8103/fhir/R4/$graphql`) from outside the React web app using the local CLI authentication token.
+
+### Step 1: Retrieve the Access Token
+Use the CLI to output the active access token:
+```bash
+NODE_NO_WARNINGS=1 npx tsx packages/cli/src/index.ts token
+```
+
+### Step 2: Create a Test Patient (REST API)
+Using the token, you can post a new patient using `curl`:
+```bash
+# Save your token into a shell variable
+TOKEN=$(NODE_NO_WARNINGS=1 npx tsx packages/cli/src/index.ts token)
+
+# Create Homer Simpson
+curl -X POST http://localhost:8103/fhir/R4/Patient \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"resourceType":"Patient","name":[{"given":["Homer"],"family":"Simpson"}]}'
+```
+
+### Step 3: Query the Patient via GraphQL
+Use `curl` to query the list of patients, requesting the ID and name fields:
+```bash
+curl -X POST http://localhost:8103/fhir/R4/\$graphql \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ PatientList { id name { given family } } }"}'
+```
+
+It should return the newly created patient details:
+```json
+{
+  "data": {
+    "PatientList": [
+      {
+        "id": "cc616671-f9b7-46c8-990f-47f9724a3cc4",
+        "name": [
+          {
+            "given": [
+              "Homer"
+            ],
+            "family": "Simpson"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
